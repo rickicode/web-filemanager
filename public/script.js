@@ -155,18 +155,32 @@ function handleDrop(event) {
     
     // Handle both files and folders from drag & drop
     const items = Array.from(event.dataTransfer.items);
-    const files = [];
+    const droppedFiles = Array.from(event.dataTransfer.files);
     
-    if (items.length > 0) {
-        // Check if dropped items include folders
+    console.log('Dropped items count:', items.length);
+    console.log('Dropped files count:', droppedFiles.length);
+    
+    // Try advanced processing first for folders and modern browsers
+    if (items.length > 0 && items[0].webkitGetAsEntry) {
         processDroppedItems(items).then(allFiles => {
+            console.log('Processed files count:', allFiles.length);
             if (allFiles.length > 0) {
                 uploadFiles(allFiles);
+            } else if (droppedFiles.length > 0) {
+                // Fallback if advanced processing failed
+                console.log('Fallback to direct files');
+                uploadFiles(droppedFiles);
+            }
+        }).catch(error => {
+            console.error('Error processing dropped items:', error);
+            // Fallback to direct files if processing fails
+            if (droppedFiles.length > 0) {
+                uploadFiles(droppedFiles);
             }
         });
     } else {
-        // Fallback to files for older browsers
-        const droppedFiles = Array.from(event.dataTransfer.files);
+        // Direct file handling for browsers that don't support webkitGetAsEntry
+        console.log('Using direct file handling');
         if (droppedFiles.length > 0) {
             uploadFiles(droppedFiles);
         }
@@ -180,7 +194,22 @@ async function processDroppedItems(items) {
         if (item.kind === 'file') {
             const entry = item.webkitGetAsEntry();
             if (entry) {
-                await processEntry(entry, files);
+                try {
+                    await processEntry(entry, files);
+                } catch (error) {
+                    console.error('Error processing entry:', error);
+                    // Fallback: try to get the file directly
+                    const file = item.getAsFile();
+                    if (file) {
+                        files.push(file);
+                    }
+                }
+            } else {
+                // Fallback: try to get the file directly
+                const file = item.getAsFile();
+                if (file) {
+                    files.push(file);
+                }
             }
         }
     }
@@ -216,10 +245,21 @@ async function processEntry(entry, files, path = '') {
 }
 
 async function uploadFiles(files, isFolder = false) {
+    // Check if files array is valid and not empty
+    if (!files || files.length === 0) {
+        showToast('No files selected for upload', 'error');
+        return;
+    }
+    
+    // Show info about multiple files being uploaded
+    if (files.length > 1) {
+        showToast(`Preparing to upload ${files.length} files...`, 'info');
+    }
+    
     const formData = new FormData();
     let totalSize = 0;
     
-    files.forEach(file => {
+    files.forEach((file, index) => {
         formData.append('files', file);
         totalSize += file.size;
         
@@ -227,6 +267,7 @@ async function uploadFiles(files, isFolder = false) {
         if (file.webkitRelativePath) {
             formData.append('relativePaths', file.webkitRelativePath);
         }
+        
     });
     
     formData.append('currentPath', currentPath);
@@ -247,11 +288,16 @@ async function uploadFiles(files, isFolder = false) {
             const duration = (endTime - startTime) / 1000; // seconds
             const speed = totalSize / duration; // bytes per second
             
-            const message = isFolder || files.some(f => f.webkitRelativePath)
-                ? `Successfully uploaded folder with ${result.files.length} file(s)`
-                : `Successfully uploaded ${result.files.length} file(s)`;
+            let message;
+            if (isFolder || files.some(f => f.webkitRelativePath)) {
+                message = `Successfully uploaded folder with ${result.files.length} file(s)`;
+            } else if (result.files.length > 1) {
+                message = `Successfully uploaded ${result.files.length} files to ${currentPath || 'root folder'}`;
+            } else {
+                message = `Successfully uploaded "${result.files[0].name}" to ${currentPath || 'root folder'}`;
+            }
             showToast(message, 'success');
-            loadFiles(); // Refresh file list
+            loadFiles(currentPath); // Refresh current directory
         } else {
             const error = await response.json();
             showToast(error.error || 'Upload failed', 'error');

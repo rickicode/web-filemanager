@@ -36,8 +36,8 @@ app.use(session({
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        let uploadPath = req.body.currentPath ?
-            path.join(UPLOADS_DIR, req.body.currentPath) : UPLOADS_DIR;
+        // Use default uploads directory, files will be moved to correct location in the route
+        let uploadPath = UPLOADS_DIR;
         
         // Handle folder structure preservation with parent folder creation
         if (req.body.preserveStructure === 'true' && file.originalname) {
@@ -202,21 +202,62 @@ app.get('/api/files', requireAuth, (req, res) => {
 });
 
 // Upload files
-app.post('/api/upload', requireAuth, upload.array('files'), (req, res) => {
+app.post('/api/upload', requireAuth, upload.array('files'), async (req, res) => {
     try {
-        const uploadedFiles = req.files.map(file => ({
-            name: file.originalname,
-            size: file.size,
-            path: path.relative(UPLOADS_DIR, file.path).replace(/\\/g, '/')
-        }));
+        const currentPath = req.body.currentPath || '';
+        const preserveStructure = req.body.preserveStructure === 'true';
+        const relativePaths = req.body.relativePaths;
         
-        res.json({ 
-            success: true, 
-            files: uploadedFiles 
+        // Determine target directory
+        const targetDir = currentPath ?
+            path.join(UPLOADS_DIR, currentPath) : UPLOADS_DIR;
+        
+        // Ensure target directory exists
+        fs.ensureDirSync(targetDir);
+        
+        const uploadedFiles = [];
+        
+        for (let i = 0; i < req.files.length; i++) {
+            const file = req.files[i];
+            let finalPath = targetDir;
+            let finalFilename = file.originalname;
+            
+            // Handle folder structure preservation
+            if (preserveStructure && relativePaths) {
+                const relativePath = Array.isArray(relativePaths) ?
+                    relativePaths[i] : relativePaths;
+                
+                if (relativePath) {
+                    const dirPath = path.dirname(relativePath);
+                    if (dirPath && dirPath !== '.') {
+                        finalPath = path.join(targetDir, dirPath);
+                        fs.ensureDirSync(finalPath);
+                    }
+                    finalFilename = path.basename(relativePath);
+                }
+            }
+            
+            const finalFilePath = path.join(finalPath, finalFilename);
+            
+            // Move file from temporary location to final location only if different
+            if (file.path !== finalFilePath) {
+                await fs.move(file.path, finalFilePath, { overwrite: true });
+            }
+            
+            uploadedFiles.push({
+                name: finalFilename,
+                size: file.size,
+                path: path.relative(UPLOADS_DIR, finalFilePath).replace(/\\/g, '/')
+            });
+        }
+        
+        res.json({
+            success: true,
+            files: uploadedFiles
         });
     } catch (error) {
         console.error('Upload error:', error);
-        res.status(500).json({ error: 'Upload failed' });
+        res.status(500).json({ error: 'Upload failed: ' + error.message });
     }
 });
 
