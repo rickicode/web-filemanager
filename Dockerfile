@@ -22,10 +22,6 @@ FROM node:20-alpine AS production
 # Install dumb-init for proper signal handling and git for version control
 RUN apk add --no-cache dumb-init git
 
-# Create app user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodeapp -u 1001
-
 # Set working directory
 WORKDIR /app
 
@@ -39,16 +35,11 @@ RUN npm ci --only=production && npm cache clean --force
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/app.js ./
 COPY --from=builder /app/healthcheck.js ./
-COPY --from=builder /app/README.md ./
 
 # Create uploads directory with proper permissions
 RUN mkdir -p uploads && \
-    chown -R nodeapp:nodejs /app && \
     chmod 755 uploads && \
     chmod 755 public
-
-# Switch to non-root user
-USER nodeapp
 
 # Expose port
 EXPOSE 3000
