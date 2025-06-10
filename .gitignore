@@ -160,6 +160,7 @@ dist/
 *.backup
 *.bak
 *.tmp
+node_modules
 
 # Lock files (comment out if you want to commit them)
 # package-lock.json
