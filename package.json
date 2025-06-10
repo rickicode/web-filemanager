@@ -5,7 +5,9 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "start:host": "HOST=0.0.0.0 PORT=3000 node app.js",
+    "start:public": "HOST=0.0.0.0 PORT=3000 ADMIN_USERNAME=admin ADMIN_PASSWORD=admin123 node app.js"
   },
   "keywords": ["file-manager", "nodejs", "docker", "express"],
   "author": "Web File Manager",

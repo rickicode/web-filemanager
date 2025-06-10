@@ -395,7 +395,9 @@ app.use((error, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`File Manager running on port ${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+    console.log(`File Manager running on http://${HOST}:${PORT}`);
     console.log(`Admin credentials: ${ADMIN_USERNAME}/${ADMIN_PASSWORD}`);
+    console.log('Server is accessible from all network interfaces');
 });
