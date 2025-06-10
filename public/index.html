@@ -49,7 +49,14 @@
             <div class="progress-bar">
                 <div id="progressFill" class="progress-fill"></div>
             </div>
-            <span id="progressText">Uploading...</span>
+            <div class="upload-info">
+                <span id="progressText">Uploading...</span>
+                <div class="upload-stats">
+                    <span id="uploadSpeed">0 MB/s</span>
+                    <span id="uploadSize">0 MB / 0 MB</span>
+                    <span id="uploadETA">ETA: --</span>
+                </div>
+            </div>
         </div>
 
         <!-- File Manager Container with Drag/Drop -->
@@ -67,6 +74,9 @@
                         </button>
                         <button id="downloadZipBtn" class="btn btn-secondary">
                             <i class="fas fa-file-archive"></i> Download as ZIP
+                        </button>
+                        <button id="deleteSelectedBtn" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Delete Selected
                         </button>
                     </div>
                 </div>

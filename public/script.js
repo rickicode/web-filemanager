@@ -78,6 +78,7 @@ function initializeEventListeners() {
     // Bulk actions
     document.getElementById('downloadSelectedBtn').addEventListener('click', downloadSelectedFiles);
     document.getElementById('downloadZipBtn').addEventListener('click', downloadSelectedAsZip);
+    document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelectedFiles);
     
     // Editor modal
     document.getElementById('closeEditor').addEventListener('click', () => closeModal(editorModal));
@@ -265,30 +266,103 @@ async function uploadFiles(files, isFolder = false) {
     }
 }
 
-function showUploadProgress() {
+let uploadStartTime = 0;
+let uploadTotalSize = 0;
+let uploadedBytes = 0;
+
+function showUploadProgress(totalSize = 0) {
     uploadProgress.style.display = 'block';
     progressFill.style.width = '0%';
-    progressText.textContent = 'Uploading...';
+    progressText.textContent = 'Preparing upload...';
     
-    // Simulate progress (in real app, you'd track actual upload progress)
+    uploadStartTime = Date.now();
+    uploadTotalSize = totalSize;
+    uploadedBytes = 0;
+    
+    document.getElementById('uploadSpeed').textContent = '0 MB/s';
+    document.getElementById('uploadSize').textContent = `0 MB / ${formatFileSize(totalSize)}`;
+    document.getElementById('uploadETA').textContent = 'ETA: calculating...';
+    
+    // Simulate progress with speed calculation
     let progress = 0;
     const interval = setInterval(() => {
-        progress += Math.random() * 30;
-        if (progress >= 90) {
-            progress = 90;
+        progress += Math.random() * 15 + 5; // 5-20% increment
+        if (progress >= 95) {
+            progress = 95;
             clearInterval(interval);
         }
+        
+        uploadedBytes = (progress / 100) * uploadTotalSize;
+        updateUploadStats(progress);
         progressFill.style.width = progress + '%';
-    }, 200);
+    }, 300);
+    
+    // Store interval for cleanup
+    window.uploadInterval = interval;
+}
+
+function updateUploadStats(progress) {
+    const currentTime = Date.now();
+    const elapsed = (currentTime - uploadStartTime) / 1000; // seconds
+    
+    if (elapsed > 0) {
+        const speed = uploadedBytes / elapsed; // bytes per second
+        const remainingBytes = uploadTotalSize - uploadedBytes;
+        const eta = speed > 0 ? remainingBytes / speed : 0;
+        
+        document.getElementById('uploadSpeed').textContent = formatSpeed(speed);
+        document.getElementById('uploadSize').textContent =
+            `${formatFileSize(uploadedBytes)} / ${formatFileSize(uploadTotalSize)}`;
+        
+        if (eta > 0 && progress < 95) {
+            document.getElementById('uploadETA').textContent = `ETA: ${formatTime(eta)}`;
+        } else {
+            document.getElementById('uploadETA').textContent = 'ETA: completing...';
+        }
+        
+        progressText.textContent = `Uploading... ${Math.round(progress)}%`;
+    }
+}
+
+function formatSpeed(bytesPerSecond) {
+    const mbps = bytesPerSecond / (1024 * 1024);
+    if (mbps >= 1) {
+        return `${mbps.toFixed(1)} MB/s`;
+    } else {
+        const kbps = bytesPerSecond / 1024;
+        return `${kbps.toFixed(0)} KB/s`;
+    }
+}
+
+function formatTime(seconds) {
+    if (seconds < 60) {
+        return `${Math.round(seconds)}s`;
+    } else if (seconds < 3600) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.round(seconds % 60);
+        return `${minutes}m ${remainingSeconds}s`;
+    } else {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        return `${hours}h ${minutes}m`;
+    }
 }
 
 function hideUploadProgress() {
+    // Clear any running interval
+    if (window.uploadInterval) {
+        clearInterval(window.uploadInterval);
+        window.uploadInterval = null;
+    }
+    
     progressFill.style.width = '100%';
     progressText.textContent = 'Upload complete!';
+    document.getElementById('uploadSpeed').textContent = '0 MB/s';
+    document.getElementById('uploadETA').textContent = 'Complete!';
     
     setTimeout(() => {
         uploadProgress.style.display = 'none';
-    }, 1000);
+    }, 1500);
 }
 
 // File management
@@ -502,7 +576,8 @@ function updateBreadcrumb(path) {
 // File operations
 async function downloadFile(filePath) {
     try {
-        window.open(`/api/download/${filePath}`, '_blank');
+        const encodedPath = encodeURIComponent(filePath);
+        window.open(`/api/download/${encodedPath}`, '_blank');
     } catch (error) {
         console.error('Download error:', error);
         showToast('Download failed: ' + error.message, 'error');
@@ -572,7 +647,8 @@ function deleteItem(itemPath) {
 async function performDelete(itemPath) {
     try {
         showLoading(true);
-        const response = await fetch(`/api/delete/${itemPath}`, {
+        const encodedPath = encodeURIComponent(itemPath);
+        const response = await fetch(`/api/delete/${encodedPath}`, {
             method: 'DELETE'
         });
         
@@ -813,7 +889,8 @@ async function downloadSelectedFiles() {
     
     for (const filePath of selectedFiles) {
         try {
-            window.open(`/api/download/${filePath}`, '_blank');
+            const encodedPath = encodeURIComponent(filePath);
+            window.open(`/api/download/${encodedPath}`, '_blank');
         } catch (error) {
             console.error('Download error:', error);
             showToast(`Failed to download ${filePath}`, 'error');
@@ -864,4 +941,64 @@ async function downloadSelectedAsZip() {
     } finally {
         showLoading(false);
     }
+}
+
+async function deleteSelectedFiles() {
+    if (selectedFiles.size === 0) {
+        showToast('No files selected', 'warning');
+        return;
+    }
+    
+    const fileCount = selectedFiles.size;
+    const message = `Are you sure you want to delete ${fileCount} selected file(s)? This action cannot be undone.`;
+    
+    showConfirmDialog(message, async () => {
+        try {
+            showLoading(true);
+            let successCount = 0;
+            let errorCount = 0;
+            
+            // Delete files one by one with proper URL encoding
+            for (const filePath of selectedFiles) {
+                try {
+                    // Encode the file path properly for URL
+                    const encodedPath = encodeURIComponent(filePath);
+                    const response = await fetch(`/api/delete/${encodedPath}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        successCount++;
+                        console.log(`Successfully deleted: ${filePath}`);
+                    } else {
+                        errorCount++;
+                        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                        console.error(`Failed to delete ${filePath}:`, errorData.error);
+                    }
+                } catch (error) {
+                    errorCount++;
+                    console.error(`Error deleting ${filePath}:`, error);
+                }
+            }
+            
+            // Show results
+            if (successCount > 0) {
+                showToast(`Successfully deleted ${successCount} file(s)`, 'success');
+            }
+            if (errorCount > 0) {
+                showToast(`Failed to delete ${errorCount} file(s)`, 'error');
+            }
+            
+            // Clear selection and refresh
+            selectedFiles.clear();
+            updateSelectedFiles();
+            loadFiles(currentPath);
+            
+        } catch (error) {
+            console.error('Bulk delete error:', error);
+            showToast('Failed to delete selected files: ' + error.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    });
 }

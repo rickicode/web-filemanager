@@ -124,9 +124,44 @@ body {
     width: 0%;
 }
 
+.upload-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
 #progressText {
     color: #d1d5db;
     font-weight: 500;
+    font-size: 1rem;
+}
+
+.upload-stats {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+.upload-stats span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+#uploadSpeed {
+    color: #10b981;
+    font-weight: 600;
+}
+
+#uploadSize {
+    color: #6366f1;
+}
+
+#uploadETA {
+    color: #f59e0b;
 }
 
 /* File Manager Container */

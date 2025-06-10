@@ -17,9 +17,9 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 fs.ensureDirSync(UPLOADS_DIR);
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middleware - Remove size limits
+app.use(express.json({ limit: '50gb' }));
+app.use(express.urlencoded({ extended: true, limit: '50gb' }));
 app.use(express.static('public'));
 
 // Session configuration
@@ -70,7 +70,10 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 100 * 1024 * 1024 // 100MB limit (increased from 50MB)
+        fileSize: Infinity, // No file size limit
+        fieldSize: Infinity, // No field size limit
+        fields: Infinity, // No field count limit
+        files: Infinity // No file count limit
     },
     fileFilter: function (req, file, cb) {
         // Allow all file types
