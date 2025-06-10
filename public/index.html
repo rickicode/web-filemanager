@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web File Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1><i class="fas fa-folder-open"></i> Web File Manager</h1>
+            <div class="header-actions">
+                <div class="upload-buttons">
+                    <button id="uploadBtn" class="btn btn-primary">
+                        <i class="fas fa-file-plus"></i> Upload Files
+                    </button>
+                    <button id="uploadFolderBtn" class="btn btn-secondary">
+                        <i class="fas fa-folder-plus"></i> Upload Folder
+                    </button>
+                </div>
+                <button id="createFolderBtn" class="btn btn-secondary">
+                    <i class="fas fa-folder-plus"></i> New Folder
+                </button>
+                <button id="logoutBtn" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+                <input type="file" id="fileInput" multiple style="display: none;">
+                <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+            </div>
+        </div>
+    </header>
+
+    <!-- Breadcrumb Navigation -->
+    <nav class="breadcrumb">
+        <div id="breadcrumbContent">
+            <span class="breadcrumb-item active" data-path="">
+                <i class="fas fa-home"></i> Home
+            </span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Upload Progress -->
+        <div id="uploadProgress" class="upload-progress" style="display: none;">
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <span id="progressText">Uploading...</span>
+        </div>
+
+        <!-- File Manager Container with Drag/Drop -->
+        <div id="fileManagerContainer" class="file-manager-container">
+            <div class="file-list-header">
+                <div class="header-left">
+                    <div class="select-controls">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        <label for="selectAll">Select All</label>
+                        <span id="selectedCount" class="selected-count">0 selected</span>
+                    </div>
+                    <div class="bulk-actions" id="bulkActions" style="display: none;">
+                        <button id="downloadSelectedBtn" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Download Selected
+                        </button>
+                        <button id="downloadZipBtn" class="btn btn-secondary">
+                            <i class="fas fa-file-archive"></i> Download as ZIP
+                        </button>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <h2>Files & Folders</h2>
+                    <div class="view-controls">
+                        <button id="gridViewBtn" class="view-btn active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button id="listViewBtn" class="view-btn" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="fileList" class="file-list grid-view">
+                <!-- Files will be loaded here -->
+            </div>
+
+            <!-- Drag overlay -->
+            <div id="dragOverlay" class="drag-overlay" style="display: none;">
+                <div class="drag-overlay-content">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Drop files or folders here to upload</h3>
+                    <p>Folder structure will be preserved</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- File Editor Modal -->
+    <div id="editorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Edit File: <span id="editFileName"></span></h3>
+                <button id="closeEditor" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <textarea id="fileEditor" placeholder="File content will appear here..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button id="saveFile" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button id="cancelEdit" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Folder Modal -->
+    <div id="folderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-folder-plus"></i> Create New Folder</h3>
+                <button id="closeFolderModal" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="folderName" placeholder="Enter folder name..." class="form-input">
+            </div>
+            <div class="modal-footer">
+                <button id="createFolder" class="btn btn-primary">
+                    <i class="fas fa-folder-plus"></i> Create
+                </button>
+                <button id="cancelFolder" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirmDialog" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Confirm Action</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure you want to perform this action?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmYes" class="btn btn-danger">
+                    <i class="fas fa-check"></i> Yes
+                </button>
+                <button id="confirmNo" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> No
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+# Web File Manager
+
+A simple and modern web-based file manager built with Node.js, Express, and Docker. Features a clean interface with drag & drop uploads, file editing, and comprehensive file management capabilities.
+
+## Features
+
+### 🚀 Core Functionality
+- **File Upload**: Drag & drop interface with multi-file support
+- **File Download**: Direct download with proper headers
+- **File Editing**: In-browser editor for text files
+- **Folder Management**: Create, navigate, and delete folders
+- **File Operations**: Delete files and folders with confirmation
+
+### 🔐 Security
+- **Admin Authentication**: Session-based login system
+- **Path Traversal Protection**: Secure file system access
+- **File Type Validation**: Configurable file type restrictions
+- **Session Management**: Secure session handling
+
+### 🎨 User Interface
+- **Modern Design**: Clean and responsive interface
+- **Multiple Views**: Grid and list view options
+- **Drag & Drop**: Intuitive file upload experience
+- **Breadcrumb Navigation**: Easy folder navigation
+- **File Icons**: Context-aware file type icons
+- **Toast Notifications**: User-friendly feedback system
+
+### 🐳 Docker Support
+- **Containerized**: Complete Docker setup
+- **Windows Compatible**: Proper volume mounting for Windows
+- **Health Checks**: Built-in container health monitoring
+- **Environment Variables**: Configurable through environment
+
+## Quick Start
+
+### Prerequisites
+- Docker and Docker Compose
+- Or Node.js 18+ (for local development)
+
+### Using Docker Compose (Recommended)
+
+1. **Clone or download this project**
+```bash
+git clone <repository-url>
+cd web-file-manager
+```
+
+2. **Start the application**
+```bash
+docker-compose up -d
+```
+
+3. **Access the application**
+   - Open your browser and go to: http://localhost:3000
+   - Login with default credentials: `admin` / `admin123`
+
+### Using Docker CLI
+
+1. **Build the image**
+```bash
+docker build -t file-manager .
+```
+
+2. **Run the container**
+```bash
+docker run -d \
+  --name web-file-manager \
+  -p 3000:3000 \
+  -v "./uploads:/app/uploads" \
+  -e ADMIN_USERNAME=admin \
+  -e ADMIN_PASSWORD=admin123 \
+  file-manager
+```
+
+### Local Development
+
+1. **Install dependencies**
+```bash
+npm install
+```
+
+2. **Start the development server**
+```bash
+npm run dev
+```
+
+3. **Access the application**
+   - Open your browser and go to: http://localhost:3000
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | Application port |
+| `ADMIN_USERNAME` | `admin` | Admin username |
+| `ADMIN_PASSWORD` | `admin123` | Admin password |
+| `SESSION_SECRET` | `file-manager-secret-key` | Session secret key |
+| `NODE_ENV` | `development` | Node environment |
+
+### Docker Volume Mounting
+
+For Windows systems, update the volume path in `docker-compose.yml`:
+
+```yaml
+volumes:
+  # Windows example
+  - "C:/Users/YourUsername/file-manager-data:/app/uploads"
+  
+  # Linux/Mac example
+  - "./uploads:/app/uploads"
+```
+
+## File Structure
+
+```
+file-manager/
+├── app.js                 # Main server file
+├── package.json           # Node.js dependencies
+├── Dockerfile            # Docker configuration
+├── docker-compose.yml    # Docker Compose setup
+├── healthcheck.js        # Container health check
+├── README.md             # This file
+├── public/               # Frontend files
+│   ├── index.html        # Main application page
+│   ├── login.html        # Login page
+│   ├── style.css         # Styles
+│   └── script.js         # Frontend JavaScript
+└── uploads/              # File storage directory
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /api/login` - User login
+- `POST /api/logout` - User logout
+- `GET /api/auth-status` - Check authentication status
+
+### File Operations
+- `GET /api/files` - List files and folders
+- `POST /api/upload` - Upload files
+- `GET /api/download/*` - Download file
+- `DELETE /api/delete/*` - Delete file or folder
+
+### File Editing
+- `GET /api/file-content/*` - Get file content for editing
+- `POST /api/save-file/*` - Save edited file content
+
+### Folder Management
+- `POST /api/create-folder` - Create new folder
+
+## Supported File Types
+
+### Editable Files
+- Text files (`.txt`, `.md`)
+- Code files (`.js`, `.css`, `.html`, `.php`, `.py`)
+- Data files (`.json`, `.xml`, `.csv`)
+
+### Uploadable Files
+- Images (`.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.svg`)
+- Documents (`.pdf`, `.doc`, `.docx`, `.xls`, `.xlsx`)
+- Archives (`.zip`, `.rar`, `.7z`, `.tar`, `.gz`)
+- Media (`.mp4`, `.mp3`, `.avi`, `.mov`)
+- Code and text files
+
+## Security Features
+
+- **Path Traversal Protection**: Prevents access outside the uploads directory
+- **File Type Validation**: Configurable file type restrictions
+- **Session Security**: Secure session configuration
+- **Authentication Required**: All file operations require login
+- **File Size Limits**: 50MB upload limit (configurable)
+
+## Browser Support
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+## Troubleshooting
+
+### Container Issues
+
+1. **Check container status**
+```bash
+docker-compose ps
+docker-compose logs file-manager
+```
+
+2. **Restart the container**
+```bash
+docker-compose restart file-manager
+```
+
+### Permission Issues (Linux/Mac)
+
+```bash
+# Fix upload directory permissions
+sudo chown -R $USER:$USER ./uploads
+chmod 755 ./uploads
+```
+
+### Windows Volume Mounting
+
+Ensure Docker Desktop has access to the drive where your project is located:
+1. Open Docker Desktop settings
+2. Go to "Resources" > "File Sharing"
+3. Add the drive containing your project
+
+## Development
+
+### Project Setup
+```bash
+# Install dependencies
+npm install
+
+# Start development server with auto-restart
+npm run dev
+
+# Start production server
+npm start
+```
+
+### Adding New Features
+
+1. **Backend**: Add new routes in `app.js`
+2. **Frontend**: Update `public/script.js` and `public/index.html`
+3. **Styling**: Modify `public/style.css`
+
+## License
+
+MIT License - feel free to use this project for personal or commercial purposes.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## Support
+
+For issues and questions:
+1. Check the troubleshooting section
+2. Review the Docker logs
+3. Create an issue with detailed information about your environment and the problem
+
+---
+
+**Default Login Credentials:**
+- Username: `admin`
+- Password: `admin123`
+
+**Important:** Change the default credentials in production by setting the `ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables.

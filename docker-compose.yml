@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  file-manager:
+    build: .
+    container_name: web-file-manager
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin123
+      - SESSION_SECRET=your-secret-key-here
+      - NODE_ENV=production
+    volumes:
+      # Windows-compatible volume binding
+      # Change the host path as needed for your Windows system
+      # Example: - "C:/Users/YourUsername/file-manager-data:/app/uploads"
+      - "./uploads:/app/uploads"
+    restart: unless-stopped
+    networks:
+      - file-manager-network
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  file-manager-network:
+    driver: bridge
+
+# Optional: Add a volume for persistent data
+volumes:
+  file_manager_data:
+    driver: local
