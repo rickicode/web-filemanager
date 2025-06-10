@@ -2,10 +2,7 @@ version: '3.8'
 
 services:
   file-manager:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      target: production
+    image: rickicode/web-filemanager:latest
     container_name: web-file-manager
     ports:
       - "3000:3000"
