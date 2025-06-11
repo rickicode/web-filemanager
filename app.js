@@ -203,7 +203,7 @@ app.get('/editor', (req, res) => {
 });
 
 // Realtime Editor page - specific room (numbers only)
-app.get('/editor/:roomId(\\d+)', (req, res) => {
+app.get('/editor/:roomId', (req, res) => {
     if (AUTH_ENABLED && !req.session.authenticated) {
         return res.redirect('/login');
     }
@@ -313,9 +313,9 @@ app.post('/api/upload', requireAuth, upload.array('files'), async (req, res) => 
 });
 
 // Download file
-app.get('/api/download/*', requireAuth, (req, res) => {
+app.get('/api/download/:path(*)', requireAuth, (req, res) => {
     try {
-        const filePath = req.params[0];
+        const filePath = req.params.path;
         const fullPath = getSafePath(filePath);
         
         if (!fs.existsSync(fullPath) || fs.statSync(fullPath).isDirectory()) {
@@ -331,9 +331,9 @@ app.get('/api/download/*', requireAuth, (req, res) => {
 });
 
 // Get file content for editing
-app.get('/api/file-content/*', requireAuth, (req, res) => {
+app.get('/api/file-content/:path(*)', requireAuth, (req, res) => {
     try {
-        const filePath = req.params[0];
+        const filePath = req.params.path;
         const fullPath = getSafePath(filePath);
         
         if (!fs.existsSync(fullPath) || fs.statSync(fullPath).isDirectory()) {
@@ -401,9 +401,9 @@ app.get('/api/file-content/*', requireAuth, (req, res) => {
 });
 
 // Save file content
-app.post('/api/save-file/*', requireAuth, (req, res) => {
+app.post('/api/save-file/:path(*)', requireAuth, (req, res) => {
     try {
-        const filePath = req.params[0];
+        const filePath = req.params.path;
         const fullPath = getSafePath(filePath);
         const { content } = req.body;
         
@@ -416,9 +416,9 @@ app.post('/api/save-file/*', requireAuth, (req, res) => {
 });
 
 // Delete file or folder
-app.delete('/api/delete/*', requireAuth, (req, res) => {
+app.delete('/api/delete/:path(*)', requireAuth, (req, res) => {
     try {
-        const itemPath = req.params[0];
+        const itemPath = req.params.path;
         const fullPath = getSafePath(itemPath);
         
         if (!fs.existsSync(fullPath)) {
@@ -559,9 +559,9 @@ app.post('/api/create-file', requireAuth, (req, res) => {
 });
 
 // Rename file or folder
-app.post('/api/rename/*', requireAuth, (req, res) => {
+app.post('/api/rename/:path(*)', requireAuth, (req, res) => {
     try {
-        const itemPath = req.params[0];
+        const itemPath = req.params.path;
         const { newName } = req.body;
         
         if (!newName || newName.trim() === '') {
