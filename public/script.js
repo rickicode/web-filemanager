@@ -848,7 +848,7 @@ function showToast(message, type = 'info') {
     toastContainer.appendChild(toast);
     
     setTimeout(() => {
-        toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+        toast.style.animation = 'slideInUp 0.3s ease-out reverse';
         setTimeout(() => {
             if (toast.parentNode) {
                 toast.parentNode.removeChild(toast);

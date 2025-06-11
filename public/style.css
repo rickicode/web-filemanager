@@ -844,8 +844,9 @@ body {
 /* Toast Notifications */
 .toast-container {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 10000;
 }
 
@@ -857,7 +858,7 @@ body {
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     border-left: 4px solid #10b981;
     min-width: 300px;
-    animation: slideInRight 0.3s ease-out;
+    animation: slideInUp 0.3s ease-out;
     border: 1px solid #374151;
     color: #f3f4f6;
 }
@@ -874,13 +875,13 @@ body {
     border-left-color: #3b82f6;
 }
 
-@keyframes slideInRight {
+@keyframes slideInUp {
     from {
-        transform: translateX(100%);
+        transform: translateX(-50%) translateY(100%);
         opacity: 0;
     }
     to {
-        transform: translateX(0);
+        transform: translateX(-50%) translateY(0);
         opacity: 1;
     }
 }
