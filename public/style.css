@@ -553,11 +553,30 @@ body {
 }
 
 .dropdown-item.edit {
+    color: #3b82f6;
+}
+
+.dropdown-item.edit:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+}
+
+.dropdown-item.rename {
     color: #f59e0b;
+}
+
+.dropdown-item.rename:hover {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
 }
 
 .dropdown-item.delete {
     color: #ef4444;
+}
+
+.dropdown-item.delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
 }
 
 .dropdown-item:first-child {

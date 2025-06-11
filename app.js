@@ -394,6 +394,41 @@ app.post('/api/create-folder', requireAuth, (req, res) => {
     }
 });
 
+// Rename file or folder
+app.post('/api/rename/*', requireAuth, (req, res) => {
+    try {
+        const itemPath = req.params[0];
+        const { newName } = req.body;
+        
+        if (!newName || newName.trim() === '') {
+            return res.status(400).json({ error: 'New name is required' });
+        }
+        
+        const oldFullPath = getSafePath(itemPath);
+        const parentDir = path.dirname(oldFullPath);
+        const newFullPath = path.join(parentDir, newName.trim());
+        
+        if (!fs.existsSync(oldFullPath)) {
+            return res.status(404).json({ error: 'File or folder not found' });
+        }
+        
+        if (fs.existsSync(newFullPath)) {
+            return res.status(400).json({ error: 'A file or folder with that name already exists' });
+        }
+        
+        // Prevent renaming to dangerous paths
+        if (newName.includes('..') || newName.includes('/') || newName.includes('\\')) {
+            return res.status(400).json({ error: 'Invalid name: cannot contain path separators or parent directory references' });
+        }
+        
+        fs.renameSync(oldFullPath, newFullPath);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Rename error:', error);
+        res.status(500).json({ error: 'Failed to rename item' });
+    }
+});
+
 // Download multiple files as ZIP
 app.post('/api/download-zip', requireAuth, (req, res) => {
     try {

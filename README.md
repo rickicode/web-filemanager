@@ -193,6 +193,7 @@ file-manager/
 - `POST /api/upload` - Upload files
 - `GET /api/download/*` - Download file
 - `DELETE /api/delete/*` - Delete file or folder
+- `POST /api/rename/*` - Rename file or folder
 
 ### File Editing
 - `GET /api/file-content/*` - Get file content for editing

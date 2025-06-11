@@ -492,6 +492,9 @@ function createFileItem(item) {
             <i class="fas fa-edit"></i> Edit
         </button>`);
     }
+    dropdownItems.push(`<button class="dropdown-item rename" onclick="renameItem('${item.path}', '${item.name}')">
+        <i class="fas fa-i-cursor"></i> Rename
+    </button>`);
     dropdownItems.push(`<button class="dropdown-item delete" onclick="deleteItem('${item.path}')">
         <i class="fas fa-trash"></i> Delete
     </button>`);
@@ -768,6 +771,53 @@ async function createFolder() {
     } catch (error) {
         console.error('Create folder error:', error);
         showToast('Failed to create folder: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Rename item function
+async function renameItem(itemPath, currentName) {
+    const newName = prompt('Enter new name:', currentName);
+    
+    if (newName === null || newName === currentName) {
+        return; // User cancelled or didn't change the name
+    }
+    
+    if (!newName || newName.trim() === '') {
+        showToast('<i class="fas fa-exclamation-triangle"></i> Please enter a valid name', 'warning');
+        return;
+    }
+    
+    // Validate new name
+    if (newName.includes('/') || newName.includes('\\') || newName.includes('..')) {
+        showToast('<i class="fas fa-exclamation-triangle"></i> Invalid name: cannot contain path separators', 'error');
+        return;
+    }
+    
+    try {
+        showLoading(true);
+        
+        const response = await fetch(`/api/rename/${encodeURIComponent(itemPath)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                newName: newName.trim()
+            })
+        });
+        
+        if (response.ok) {
+            showToast('<i class="fas fa-check"></i> Item renamed successfully', 'success');
+            loadFiles(currentPath); // Refresh file list
+        } else {
+            const error = await response.json();
+            showToast('<i class="fas fa-exclamation-triangle"></i> ' + (error.error || 'Failed to rename item'), 'error');
+        }
+    } catch (error) {
+        console.error('Rename error:', error);
+        showToast('<i class="fas fa-exclamation-triangle"></i> Failed to rename item: ' + error.message, 'error');
     } finally {
         showLoading(false);
     }
