@@ -313,9 +313,9 @@ app.post('/api/upload', requireAuth, upload.array('files'), async (req, res) => 
 });
 
 // Download file
-app.get('/api/download/:path(*)', requireAuth, (req, res) => {
+app.get('/api/download/*', requireAuth, (req, res) => {
     try {
-        const filePath = req.params.path;
+        const filePath = req.params[0];
         const fullPath = getSafePath(filePath);
         
         if (!fs.existsSync(fullPath) || fs.statSync(fullPath).isDirectory()) {
@@ -331,9 +331,9 @@ app.get('/api/download/:path(*)', requireAuth, (req, res) => {
 });
 
 // Get file content for editing
-app.get('/api/file-content/:path(*)', requireAuth, (req, res) => {
+app.get('/api/file-content/*', requireAuth, (req, res) => {
     try {
-        const filePath = req.params.path;
+        const filePath = req.params[0];
         const fullPath = getSafePath(filePath);
         
         if (!fs.existsSync(fullPath) || fs.statSync(fullPath).isDirectory()) {
@@ -401,9 +401,9 @@ app.get('/api/file-content/:path(*)', requireAuth, (req, res) => {
 });
 
 // Save file content
-app.post('/api/save-file/:path(*)', requireAuth, (req, res) => {
+app.post('/api/save-file/*', requireAuth, (req, res) => {
     try {
-        const filePath = req.params.path;
+        const filePath = req.params[0];
         const fullPath = getSafePath(filePath);
         const { content } = req.body;
         
@@ -416,9 +416,9 @@ app.post('/api/save-file/:path(*)', requireAuth, (req, res) => {
 });
 
 // Delete file or folder
-app.delete('/api/delete/:path(*)', requireAuth, (req, res) => {
+app.delete('/api/delete/*', requireAuth, (req, res) => {
     try {
-        const itemPath = req.params.path;
+        const itemPath = req.params[0];
         const fullPath = getSafePath(itemPath);
         
         if (!fs.existsSync(fullPath)) {
@@ -559,9 +559,9 @@ app.post('/api/create-file', requireAuth, (req, res) => {
 });
 
 // Rename file or folder
-app.post('/api/rename/:path(*)', requireAuth, (req, res) => {
+app.post('/api/rename/*', requireAuth, (req, res) => {
     try {
-        const itemPath = req.params.path;
+        const itemPath = req.params[0];
         const { newName } = req.body;
         
         if (!newName || newName.trim() === '') {
