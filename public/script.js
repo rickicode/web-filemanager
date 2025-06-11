@@ -41,12 +41,24 @@ async function checkAuth() {
         const response = await fetch('/api/auth-status');
         const data = await response.json();
         
-        if (!data.authenticated) {
+        if (!data.authenticated && data.authEnabled) {
             window.location.href = '/login';
+        }
+        
+        // Hide logout button if authentication is disabled
+        if (!data.authEnabled) {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.style.display = 'none';
+            }
         }
     } catch (error) {
         console.error('Auth check failed:', error);
-        window.location.href = '/login';
+        // Only redirect to login if we can't determine auth status and auth might be enabled
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('noauth')) {
+            window.location.href = '/login';
+        }
     }
 }
 
@@ -153,22 +165,25 @@ function handleDrop(event) {
     fileManagerContainer.classList.remove('dragover');
     dragOverlay.style.display = 'none';
     
-    // Handle both files and folders from drag & drop
-    const items = Array.from(event.dataTransfer.items);
+    // Get dropped files
     const droppedFiles = Array.from(event.dataTransfer.files);
+    const items = Array.from(event.dataTransfer.items);
     
-    console.log('Dropped items count:', items.length);
-    console.log('Dropped files count:', droppedFiles.length);
+    console.log(`Dropped ${droppedFiles.length} files`, droppedFiles.map(f => f.name));
     
-    // Try advanced processing first for folders and modern browsers
-    if (items.length > 0 && items[0].webkitGetAsEntry) {
+    // Check if any items have directory structure
+    const hasDirectories = items.some(item => {
+        const entry = item.webkitGetAsEntry && item.webkitGetAsEntry();
+        return entry && entry.isDirectory;
+    });
+    
+    if (hasDirectories && items.length > 0 && items[0].webkitGetAsEntry) {
+        // Handle folder structure
         processDroppedItems(items).then(allFiles => {
-            console.log('Processed files count:', allFiles.length);
+            console.log(`Processed ${allFiles.length} files from directories`);
             if (allFiles.length > 0) {
-                uploadFiles(allFiles);
+                uploadFiles(allFiles, true);
             } else if (droppedFiles.length > 0) {
-                // Fallback if advanced processing failed
-                console.log('Fallback to direct files');
                 uploadFiles(droppedFiles);
             }
         }).catch(error => {
@@ -179,10 +194,11 @@ function handleDrop(event) {
             }
         });
     } else {
-        // Direct file handling for browsers that don't support webkitGetAsEntry
-        console.log('Using direct file handling');
+        // Direct file handling - this should work for multiple files
         if (droppedFiles.length > 0) {
             uploadFiles(droppedFiles);
+        } else {
+            showToast('No files were dropped', 'error');
         }
     }
 }
@@ -214,6 +230,7 @@ async function processDroppedItems(items) {
         }
     }
     
+    console.log(`processDroppedItems result: ${files.length} files`);
     return files;
 }
 
@@ -251,9 +268,13 @@ async function uploadFiles(files, isFolder = false) {
         return;
     }
     
+    console.log(`Starting upload of ${files.length} files:`, files.map(f => f.name));
+    
     // Show info about multiple files being uploaded
     if (files.length > 1) {
         showToast(`Preparing to upload ${files.length} files...`, 'info');
+    } else {
+        showToast(`Preparing to upload "${files[0].name}"...`, 'info');
     }
     
     const formData = new FormData();
@@ -476,7 +497,7 @@ function createFileItem(item) {
     </button>`);
     
     const dropdown = dropdownItems.length > 0 ? `
-        <div class="file-dropdown-top">
+        <div class="file-dropdown-top" onclick="event.stopPropagation()">
             <button class="dropdown-toggle" onclick="toggleDropdown(event)">
                 <i class="fas fa-ellipsis-v"></i>
             </button>
@@ -487,9 +508,9 @@ function createFileItem(item) {
     ` : '';
     
     const checkbox = `
-        <div class="file-checkbox">
+        <div class="file-checkbox" onclick="event.stopPropagation()">
             <input type="checkbox" id="file-${item.path.replace(/[^a-zA-Z0-9]/g, '_')}"
-                   class="file-select" value="${item.path}" onchange="updateSelectedFiles()">
+                   class="file-select" value="${item.path}" onchange="updateSelectedFiles()" onclick="event.stopPropagation()">
         </div>
     `;
     

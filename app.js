@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+require('dotenv').config();
+
 const express = require('express');
 const session = require('express-session');
 const multer = require('multer');
@@ -12,6 +15,9 @@ const PORT = process.env.PORT || 3000;
 // Admin credentials from environment variables
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
+// Authentication toggle from environment variables
+const AUTH_ENABLED = process.env.AUTH !== 'false';
 
 // Ensure uploads directory exists
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -83,7 +89,7 @@ const upload = multer({
 
 // Authentication middleware
 const requireAuth = (req, res, next) => {
-    if (req.session.authenticated) {
+    if (!AUTH_ENABLED || req.session.authenticated) {
         next();
     } else {
         res.status(401).json({ error: 'Authentication required' });
@@ -107,6 +113,9 @@ const getSafePath = (requestedPath) => {
 
 // Login page
 app.get('/login', (req, res) => {
+    if (!AUTH_ENABLED) {
+        return res.redirect('/');
+    }
     if (req.session.authenticated) {
         return res.redirect('/');
     }
@@ -148,12 +157,15 @@ app.post('/api/logout', (req, res) => {
 
 // Check authentication status
 app.get('/api/auth-status', (req, res) => {
-    res.json({ authenticated: !!req.session.authenticated });
+    res.json({
+        authenticated: !AUTH_ENABLED || !!req.session.authenticated,
+        authEnabled: AUTH_ENABLED
+    });
 });
 
 // Main page - redirect to login if not authenticated
 app.get('/', (req, res) => {
-    if (!req.session.authenticated) {
+    if (AUTH_ENABLED && !req.session.authenticated) {
         return res.redirect('/login');
     }
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -439,6 +451,9 @@ app.use((error, req, res, next) => {
 const HOST = process.env.HOST || '0.0.0.0';
 app.listen(PORT, HOST, () => {
     console.log(`File Manager running on http://${HOST}:${PORT}`);
-    console.log(`Admin credentials: ${ADMIN_USERNAME}/${ADMIN_PASSWORD}`);
+    console.log(`Authentication: ${AUTH_ENABLED ? 'ENABLED' : 'DISABLED'}`);
+    if (AUTH_ENABLED) {
+        console.log(`Admin credentials: ${ADMIN_USERNAME}/${ADMIN_PASSWORD}`);
+    }
     console.log('Server is accessible from all network interfaces');
 });

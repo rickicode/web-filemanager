@@ -45,7 +45,14 @@ git clone <repository-url>
 cd web-file-manager
 ```
 
-2. **Start the application**
+2. **Configure environment (optional)**
+```bash
+# Copy and customize environment variables
+cp .env.example .env
+# Edit .env file as needed
+```
+
+3. **Start the application**
 ```bash
 docker-compose up -d
 ```
@@ -87,6 +94,40 @@ npm run dev
 3. **Access the application**
    - Open your browser and go to: http://localhost:3000
 
+### Disabling Authentication
+
+To disable authentication and allow direct access without login, set the `AUTH` environment variable to `false`:
+
+**Using Docker Compose:**
+```bash
+# Create a .env file or export the variable
+export AUTH=false
+docker-compose up -d
+```
+
+**Using Docker CLI:**
+```bash
+docker run -d \
+  --name web-file-manager \
+  -p 3000:3000 \
+  -v "./uploads:/app/uploads" \
+  -e AUTH=false \
+  file-manager
+```
+
+**For Local Development:**
+```bash
+# Set environment variable
+export AUTH=false
+npm start
+```
+
+When authentication is disabled:
+- No login page will be shown
+- Direct access to the file manager interface
+- All file operations are immediately available
+- Useful for local development or trusted environments
+
 ## Configuration
 
 ### Environment Variables
@@ -94,6 +135,7 @@ npm run dev
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3000` | Application port |
+| `AUTH` | `true` | Enable/disable authentication (`true` or `false`) |
 | `ADMIN_USERNAME` | `admin` | Admin username |
 | `ADMIN_PASSWORD` | `admin123` | Admin password |
 | `SESSION_SECRET` | `file-manager-secret-key` | Session secret key |

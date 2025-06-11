@@ -3,12 +3,10 @@ version: '3.8'
 services:
   file-manager:
     image: rickicode/web-filemanager:latest
-    container_name: web-file-manager
-    ports:
-      - "3000:3000"
-    # When using host network mode, comment out the ports section above
+    container_name: web-file-manager-host
+    network_mode: host
     environment:
-      - PORT=3000
+      - PORT=${PORT:-3000}
       - HOST=${HOST:-0.0.0.0}
       - AUTH=${AUTH:-true}  # Set to false to disable authentication
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
@@ -18,27 +16,17 @@ services:
       - MAX_FILE_SIZE=${MAX_FILE_SIZE:-0}  # 0 = unlimited
       - UPLOAD_TIMEOUT=${UPLOAD_TIMEOUT:-300000}  # 5 minutes
     volumes:
-      # Windows-compatible volume binding with read-write permissions
-      # Change the host path as needed for your Windows system
-      # Example: - "C:/Users/YourUsername/file-manager-data:/app/uploads"
+      # Host network mode - direct volume binding
       - "./uploads:/app/uploads:rw"
       # Optional: Mount additional storage
       # - "./storage:/app/storage:rw"
     restart: unless-stopped
-    # Use host network mode (uncomment the line below and comment out ports + networks)
-    # network_mode: host
-    networks:
-      - file-manager-network
     healthcheck:
       test: ["CMD", "node", "healthcheck.js"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.file-manager.rule=Host(`filemanager.localhost`)"
-      - "traefik.http.services.file-manager.loadbalancer.server.port=3000"
     deploy:
       resources:
         limits:
@@ -46,13 +34,8 @@ services:
         reservations:
           memory: 512M
 
-networks:
-  file-manager-network:
-    driver: bridge
-    name: file-manager-net
-
-# Optional: Named volumes for persistent data
-volumes:
-  file_manager_uploads:
-    driver: local
-    name: file-manager-uploads
+# Note: When using host network mode:
+# - The container uses the host's network stack directly
+# - No port mapping is needed
+# - The application will be accessible on the host's IP address
+# - Custom networks are not supported with host mode

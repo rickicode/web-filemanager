@@ -9,17 +9,23 @@
     "start:host": "HOST=0.0.0.0 PORT=3000 node app.js",
     "start:public": "HOST=0.0.0.0 PORT=3000 ADMIN_USERNAME=admin ADMIN_PASSWORD=admin123 node app.js"
   },
-  "keywords": ["file-manager", "nodejs", "docker", "express"],
+  "keywords": [
+    "file-manager",
+    "nodejs",
+    "docker",
+    "express"
+  ],
   "author": "Web File Manager",
   "license": "MIT",
   "dependencies": {
+    "archiver": "^5.3.2",
+    "dotenv": "^16.5.0",
     "express": "^4.20.0",
     "express-session": "^1.18.1",
-    "multer": "^2.0.0-rc.4",
-    "path": "^0.12.7",
     "fs-extra": "^11.3.0",
     "mime-types": "^3.0.1",
-    "archiver": "^5.3.2"
+    "multer": "^2.0.0-rc.4",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
