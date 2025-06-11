@@ -7,7 +7,9 @@ A simple and modern web-based file manager built with Node.js, Express, and Dock
 ### 🚀 Core Functionality
 - **File Upload**: Drag & drop interface with multi-file support
 - **File Download**: Direct download with proper headers
+- **File Creation**: Create new files with custom names and initial content
 - **File Editing**: In-browser editor for text files
+- **Realtime Text Editor**: Collaborative text editor with live synchronization
 - **Folder Management**: Create, navigate, and delete folders
 - **File Operations**: Delete files and folders with confirmation
 
@@ -18,8 +20,10 @@ A simple and modern web-based file manager built with Node.js, Express, and Dock
 - **Session Management**: Secure session handling
 
 ### 🎨 User Interface
-- **Modern Design**: Clean and responsive interface
-- **Multiple Views**: Grid and list view options
+- **Modern Design**: Clean and fully responsive interface
+- **Mobile-First Design**: Optimized for all screen sizes (320px and up)
+- **Responsive Layout**: Adaptive header, buttons, and file lists
+- **Multiple Views**: Grid and list view options with mobile optimization
 - **Drag & Drop**: Intuitive file upload experience
 - **Breadcrumb Navigation**: Easy folder navigation
 - **File Icons**: Context-aware file type icons
@@ -30,6 +34,19 @@ A simple and modern web-based file manager built with Node.js, Express, and Dock
 - **Windows Compatible**: Proper volume mounting for Windows
 - **Health Checks**: Built-in container health monitoring
 - **Environment Variables**: Configurable through environment
+
+### 🔄 Realtime Text Editor
+- **Live Collaboration**: Multiple users can edit the same document simultaneously
+- **Multiple Rooms**: Create separate editor rooms using clean URLs (e.g., `/editor/382`)
+- **Instant Synchronization**: Changes are reflected in real-time across all connected users in the same room
+- **User Count Display**: See how many users are currently editing in each room
+- **Auto-save**: All changes are automatically saved and persisted per room
+- **Save to File**: Save editor content to files in the "Editor" folder with custom filenames
+- **Room-based File Naming**: Files saved from specific rooms include room identifier
+- **Connection Status**: Visual indicators for connection status
+- **Simple Room Creation**: "New Room" button generates 3-digit room numbers (100-999)
+- **Clean URLs**: Easy-to-share room URLs with path-based routing
+- **Default Room**: Access `/editor` without parameters for the default shared editor
 
 ## Quick Start
 
@@ -191,6 +208,7 @@ file-manager/
 ### File Operations
 - `GET /api/files` - List files and folders
 - `POST /api/upload` - Upload files
+- `POST /api/create-file` - Create new file with name and content
 - `GET /api/download/*` - Download file
 - `DELETE /api/delete/*` - Delete file or folder
 - `POST /api/rename/*` - Rename file or folder
@@ -205,9 +223,14 @@ file-manager/
 ## Supported File Types
 
 ### Editable Files
-- Text files (`.txt`, `.md`)
-- Code files (`.js`, `.css`, `.html`, `.php`, `.py`)
-- Data files (`.json`, `.xml`, `.csv`)
+- **Text files**: `.txt`, `.md`, `.markdown`, `.rst`, `.asciidoc`
+- **Web files**: `.html`, `.htm`, `.css`, `.scss`, `.sass`, `.less`, `.js`, `.jsx`, `.ts`, `.tsx`, `.vue`, `.svelte`
+- **Backend code**: `.php`, `.py`, `.rb`, `.go`, `.rs`, `.java`, `.kt`, `.cs`, `.vb`, `.cpp`, `.c`, `.h`, `.hpp`, `.swift`, `.scala`
+- **Shell scripts**: `.sh`, `.bash`, `.zsh`, `.fish`, `.ps1`, `.bat`, `.cmd`
+- **Config files**: `.json`, `.yaml`, `.yml`, `.toml`, `.ini`, `.cfg`, `.conf`, `.xml`, `.env`
+- **Data files**: `.csv`, `.tsv`, `.properties`, `.sql`
+- **Documentation**: `.tex`, `.latex`, `.org`, `.wiki`
+- **Other formats**: `.log`, `.gitignore`, `.dockerignore`, `.eslintrc`, `.prettierrc`, and more
 
 ### Uploadable Files
 - Images (`.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`, `.svg`)

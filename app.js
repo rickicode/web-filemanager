@@ -8,8 +8,12 @@ const path = require('path');
 const fs = require('fs-extra');
 const mime = require('mime-types');
 const archiver = require('archiver');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 // Admin credentials from environment variables
@@ -190,6 +194,22 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Realtime Editor page - default room
+app.get('/editor', (req, res) => {
+    if (AUTH_ENABLED && !req.session.authenticated) {
+        return res.redirect('/login');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'editor.html'));
+});
+
+// Realtime Editor page - specific room (numbers only)
+app.get('/editor/:roomId(\\d+)', (req, res) => {
+    if (AUTH_ENABLED && !req.session.authenticated) {
+        return res.redirect('/login');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'editor.html'));
+});
+
 // Get files and folders
 app.get('/api/files', requireAuth, (req, res) => {
     try {
@@ -320,14 +340,53 @@ app.get('/api/file-content/*', requireAuth, (req, res) => {
             return res.status(404).json({ error: 'File not found' });
         }
         
-        // Check if file is text-based
+        // Check if file is text-based using comprehensive extension list
+        const fileExt = path.extname(fullPath).toLowerCase();
+        const editableExtensions = [
+            // Text files
+            '.txt', '.md', '.markdown', '.rst', '.asciidoc',
+            
+            // Code files - Web
+            '.html', '.htm', '.css', '.scss', '.sass', '.less',
+            '.js', '.jsx', '.ts', '.tsx', '.vue', '.svelte',
+            
+            // Code files - Backend
+            '.php', '.py', '.rb', '.go', '.rs', '.java', '.kt',
+            '.cs', '.vb', '.cpp', '.c', '.h', '.hpp',
+            '.swift', '.m', '.mm', '.scala', '.clj', '.hs',
+            
+            // Shell and scripts
+            '.sh', '.bash', '.zsh', '.fish', '.ps1', '.bat', '.cmd',
+            
+            // Data and config files
+            '.json', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf',
+            '.xml', '.csv', '.tsv', '.properties', '.env',
+            
+            // SQL and database
+            '.sql', '.sqlite', '.db',
+            
+            // Documentation and markup
+            '.tex', '.latex', '.org', '.wiki', '.mediawiki',
+            
+            // Log files
+            '.log', '.logs',
+            
+            // Other text-based formats
+            '.gitignore', '.gitattributes', '.editorconfig',
+            '.dockerignore', '.eslintrc', '.prettierrc',
+            '.babelrc', '.nvmrc', '.npmrc', '.yarnrc'
+        ];
+        
+        // Also fallback to MIME type check for additional coverage
         const mimeType = mime.lookup(fullPath);
-        const isTextFile = mimeType && (
-            mimeType.startsWith('text/') || 
+        const isMimeTextBased = mimeType && (
+            mimeType.startsWith('text/') ||
             mimeType.includes('json') ||
             mimeType.includes('xml') ||
             mimeType.includes('javascript')
         );
+        
+        const isTextFile = editableExtensions.includes(fileExt) || isMimeTextBased;
         
         if (!isTextFile) {
             return res.status(400).json({ error: 'File is not editable' });
@@ -391,6 +450,111 @@ app.post('/api/create-folder', requireAuth, (req, res) => {
     } catch (error) {
         console.error('Create folder error:', error);
         res.status(500).json({ error: 'Failed to create folder' });
+    }
+});
+
+// Save editor content to file
+app.post('/api/save-editor-file', requireAuth, (req, res) => {
+    try {
+        const { filename, content, roomId } = req.body;
+        
+        if (!filename || filename.trim() === '') {
+            return res.status(400).json({ error: 'Filename is required' });
+        }
+        
+        const cleanFilename = filename.trim();
+        
+        // Prevent dangerous file names
+        if (cleanFilename.includes('..') || cleanFilename.includes('/') || cleanFilename.includes('\\')) {
+            return res.status(400).json({ error: 'Invalid filename: cannot contain path separators or parent directory references' });
+        }
+        
+        // Create Editor directory if it doesn't exist
+        const editorDir = path.join(UPLOADS_DIR, 'Editor');
+        fs.ensureDirSync(editorDir);
+        
+        // Create filename with room info if not default room
+        let finalFilename = cleanFilename;
+        if (roomId && roomId !== 'default') {
+            const ext = path.extname(cleanFilename);
+            const nameWithoutExt = path.basename(cleanFilename, ext);
+            finalFilename = `${nameWithoutExt}_room-${roomId}${ext}`;
+        }
+        
+        const fullPath = path.join(editorDir, finalFilename);
+        
+        // Check if file already exists and add number suffix if needed
+        let counter = 1;
+        let actualFilename = finalFilename;
+        let actualFullPath = fullPath;
+        
+        while (fs.existsSync(actualFullPath)) {
+            const ext = path.extname(finalFilename);
+            const nameWithoutExt = path.basename(finalFilename, ext);
+            actualFilename = `${nameWithoutExt}_${counter}${ext}`;
+            actualFullPath = path.join(editorDir, actualFilename);
+            counter++;
+        }
+        
+        // Save the file
+        fs.writeFileSync(actualFullPath, content || '', 'utf8');
+        
+        console.log(`Editor content saved to: ${actualFullPath}`);
+        
+        res.json({
+            success: true,
+            filename: actualFilename,
+            path: path.relative(UPLOADS_DIR, actualFullPath).replace(/\\/g, '/'),
+            size: Buffer.byteLength(content || '', 'utf8')
+        });
+    } catch (error) {
+        console.error('Save editor file error:', error);
+        res.status(500).json({ error: 'Failed to save file' });
+    }
+});
+
+// Create new file
+app.post('/api/create-file', requireAuth, (req, res) => {
+    try {
+        const { name, currentPath, content = '' } = req.body;
+        
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ error: 'File name is required' });
+        }
+        
+        const fileName = name.trim();
+        
+        // Prevent dangerous file names
+        if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+            return res.status(400).json({ error: 'Invalid file name: cannot contain path separators or parent directory references' });
+        }
+        
+        const filePath = currentPath ?
+            path.join(currentPath, fileName) : fileName;
+        const fullPath = getSafePath(filePath);
+        
+        if (fs.existsSync(fullPath)) {
+            return res.status(400).json({ error: 'File already exists' });
+        }
+        
+        // Ensure parent directory exists
+        const parentDir = path.dirname(fullPath);
+        fs.ensureDirSync(parentDir);
+        
+        // Create the file with initial content
+        fs.writeFileSync(fullPath, content, 'utf8');
+        
+        res.json({
+            success: true,
+            file: {
+                name: fileName,
+                path: path.relative(UPLOADS_DIR, fullPath).replace(/\\/g, '/'),
+                size: Buffer.byteLength(content, 'utf8')
+            }
+        });
+    } catch (error) {
+        console.error('Create file error:', error);
+        res.status(500).json({ error: 'Failed to create file' });
     }
 });
 
@@ -490,6 +654,86 @@ app.post('/api/download-zip', requireAuth, (req, res) => {
     }
 });
 
+// Realtime editor storage - support multiple rooms
+const editorRooms = new Map(); // roomId -> { content: '', users: Set() }
+
+// WebSocket handling with room support
+io.on('connection', (socket) => {
+    let currentRoom = null;
+    
+    // Handle joining a room
+    socket.on('joinRoom', (roomId) => {
+        // Leave previous room if any
+        if (currentRoom) {
+            leaveRoom(socket, currentRoom);
+        }
+        
+        // Normalize room ID (default to 'default' if empty)
+        roomId = roomId || 'default';
+        currentRoom = roomId;
+        
+        // Initialize room if doesn't exist
+        if (!editorRooms.has(roomId)) {
+            editorRooms.set(roomId, {
+                content: '',
+                users: new Set()
+            });
+        }
+        
+        const room = editorRooms.get(roomId);
+        room.users.add(socket.id);
+        
+        // Join socket.io room
+        socket.join(roomId);
+        
+        console.log(`User ${socket.id} joined room: ${roomId}. Room users: ${room.users.size}`);
+        
+        // Send current content to new user
+        socket.emit('initialContent', room.content);
+        
+        // Update user count for users in this room
+        io.to(roomId).emit('userCountUpdate', room.users.size);
+        socket.emit('roomInfo', { roomId: roomId });
+    });
+    
+    // Handle text changes
+    socket.on('textChange', (data) => {
+        if (currentRoom && editorRooms.has(currentRoom)) {
+            const room = editorRooms.get(currentRoom);
+            room.content = data.content;
+            // Broadcast to all other users in the same room
+            socket.to(currentRoom).emit('textUpdate', { content: room.content });
+        }
+    });
+    
+    // Handle disconnection
+    socket.on('disconnect', () => {
+        if (currentRoom) {
+            leaveRoom(socket, currentRoom);
+        }
+    });
+    
+    // Helper function to leave a room
+    function leaveRoom(socket, roomId) {
+        if (editorRooms.has(roomId)) {
+            const room = editorRooms.get(roomId);
+            room.users.delete(socket.id);
+            
+            console.log(`User ${socket.id} left room: ${roomId}. Room users: ${room.users.size}`);
+            
+            // Update user count for remaining users in room
+            io.to(roomId).emit('userCountUpdate', room.users.size);
+            
+            // Clean up empty rooms (except default)
+            if (room.users.size === 0 && roomId !== 'default') {
+                editorRooms.delete(roomId);
+                console.log(`Room ${roomId} deleted (empty)`);
+            }
+        }
+        socket.leave(roomId);
+    }
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
@@ -503,8 +747,9 @@ app.use((error, req, res, next) => {
 
 // Start server
 const HOST = process.env.HOST || '0.0.0.0';
-app.listen(PORT, HOST, () => {
+server.listen(PORT, HOST, () => {
     console.log(`File Manager running on http://${HOST}:${PORT}`);
+    console.log(`Realtime Editor available at http://${HOST}:${PORT}/editor`);
     console.log(`Authentication: ${AUTH_ENABLED ? 'ENABLED' : 'DISABLED'}`);
     if (AUTH_ENABLED) {
         console.log(`Admin credentials: ${ADMIN_USERNAME}/${ADMIN_PASSWORD}`);

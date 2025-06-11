@@ -25,6 +25,9 @@ const fileEditor = document.getElementById('fileEditor');
 const editFileName = document.getElementById('editFileName');
 const folderModal = document.getElementById('folderModal');
 const folderName = document.getElementById('folderName');
+const fileModal = document.getElementById('fileModal');
+const fileName = document.getElementById('fileName');
+const fileContent = document.getElementById('fileContent');
 const confirmDialog = document.getElementById('confirmDialog');
 const confirmMessage = document.getElementById('confirmMessage');
 
@@ -85,6 +88,7 @@ function initializeEventListeners() {
     
     // Header actions
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+    document.getElementById('createFileBtn').addEventListener('click', () => openModal(fileModal));
     document.getElementById('createFolderBtn').addEventListener('click', () => openModal(folderModal));
     
     // Bulk actions
@@ -96,6 +100,11 @@ function initializeEventListeners() {
     document.getElementById('closeEditor').addEventListener('click', () => closeModal(editorModal));
     document.getElementById('saveFile').addEventListener('click', saveFileContent);
     document.getElementById('cancelEdit').addEventListener('click', () => closeModal(editorModal));
+    
+    // File modal
+    document.getElementById('closeFileModal').addEventListener('click', () => closeModal(fileModal));
+    document.getElementById('createFile').addEventListener('click', createFile);
+    document.getElementById('cancelFile').addEventListener('click', () => closeModal(fileModal));
     
     // Folder modal
     document.getElementById('closeFolderModal').addEventListener('click', () => closeModal(folderModal));
@@ -603,7 +612,40 @@ function isEditableFile(item) {
     if (item.isDirectory) return false;
     
     const ext = item.extension.toLowerCase();
-    const editableExtensions = ['.txt', '.md', '.json', '.xml', '.csv', '.js', '.css', '.html', '.php', '.py'];
+    const editableExtensions = [
+        // Text files
+        '.txt', '.md', '.markdown', '.rst', '.asciidoc',
+        
+        // Code files - Web
+        '.html', '.htm', '.css', '.scss', '.sass', '.less',
+        '.js', '.jsx', '.ts', '.tsx', '.vue', '.svelte',
+        
+        // Code files - Backend
+        '.php', '.py', '.rb', '.go', '.rs', '.java', '.kt',
+        '.cs', '.vb', '.cpp', '.c', '.h', '.hpp',
+        '.swift', '.m', '.mm', '.scala', '.clj', '.hs',
+        
+        // Shell and scripts
+        '.sh', '.bash', '.zsh', '.fish', '.ps1', '.bat', '.cmd',
+        
+        // Data and config files
+        '.json', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf',
+        '.xml', '.csv', '.tsv', '.properties', '.env',
+        
+        // SQL and database
+        '.sql', '.sqlite', '.db',
+        
+        // Documentation and markup
+        '.tex', '.latex', '.org', '.wiki', '.mediawiki',
+        
+        // Log files
+        '.log', '.logs',
+        
+        // Other text-based formats
+        '.gitignore', '.gitattributes', '.editorconfig',
+        '.dockerignore', '.eslintrc', '.prettierrc',
+        '.babelrc', '.nvmrc', '.npmrc', '.yarnrc'
+    ];
     
     return editableExtensions.includes(ext);
 }
@@ -777,6 +819,54 @@ async function createFolder() {
 }
 
 // Rename item function
+// Create new file
+async function createFile() {
+    const name = fileName.value.trim();
+    const content = fileContent.value || '';
+    
+    if (!name) {
+        showToast('<i class="fas fa-exclamation-triangle"></i> Please enter a file name', 'error');
+        fileName.focus();
+        return;
+    }
+    
+    // Basic validation for file name
+    if (name.includes('/') || name.includes('\\') || name.includes('..')) {
+        showToast('<i class="fas fa-exclamation-triangle"></i> Invalid file name. Cannot contain path separators or parent directory references.', 'error');
+        fileName.focus();
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/create-file', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                currentPath: currentPath,
+                content: content
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`<i class="fas fa-check-circle"></i> File "${result.file.name}" created successfully`, 'success');
+            closeModal(fileModal);
+            fileName.value = '';
+            fileContent.value = '';
+            loadFiles(currentPath); // Refresh current directory
+        } else {
+            const error = await response.json();
+            showToast(`<i class="fas fa-exclamation-triangle"></i> ${error.error}`, 'error');
+        }
+    } catch (error) {
+        console.error('Create file error:', error);
+        showToast('<i class="fas fa-exclamation-triangle"></i> Failed to create file: ' + error.message, 'error');
+    }
+}
+
 async function renameItem(itemPath, currentName) {
     const newName = prompt('Enter new name:', currentName);
     

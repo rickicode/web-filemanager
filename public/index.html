@@ -15,16 +15,22 @@
             <h1><i class="fas fa-folder-open"></i> Web File Manager</h1>
             <div class="header-actions">
                 <div class="upload-buttons">
-                    <button id="uploadBtn" class="btn btn-primary">
-                        <i class="fas fa-file-plus"></i> Upload Files
+                    <button id="uploadBtn" class="btn btn-success">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Files
                     </button>
                     <button id="uploadFolderBtn" class="btn btn-secondary">
                         <i class="fas fa-folder-plus"></i> Upload Folder
                     </button>
                 </div>
+                <button id="createFileBtn" class="btn btn-secondary">
+                    <i class="fas fa-file-medical"></i> New File
+                </button>
                 <button id="createFolderBtn" class="btn btn-secondary">
                     <i class="fas fa-folder-plus"></i> New Folder
                 </button>
+                <a href="/editor" class="btn btn-info">
+                    <i class="fas fa-edit"></i> Text Editor
+                </a>
                 <button id="logoutBtn" class="btn btn-danger">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
@@ -149,6 +155,37 @@
                     <i class="fas fa-folder-plus"></i> Create
                 </button>
                 <button id="cancelFolder" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create File Modal -->
+    <div id="fileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-plus"></i> Create New File</h3>
+                <button id="closeFileModal" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="fileName">File Name:</label>
+                    <input type="text" id="fileName" placeholder="Enter file name (e.g., document.txt, script.js)..." class="form-input">
+                    <small class="form-hint">Include the file extension to specify the file type</small>
+                </div>
+                <div class="form-group">
+                    <label for="fileContent">Initial Content (optional):</label>
+                    <textarea id="fileContent" placeholder="Enter initial file content..." class="form-textarea" rows="6"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="createFile" class="btn btn-primary">
+                    <i class="fas fa-file-plus"></i> Create File
+                </button>
+                <button id="cancelFile" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Cancel
                 </button>
             </div>
