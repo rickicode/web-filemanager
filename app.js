@@ -28,81 +28,35 @@ app.use(express.json({ limit: '50gb' }));
 app.use(express.urlencoded({ extended: true, limit: '50gb' }));
 app.use(express.static('public'));
 
-// Session configuration
-let sessionConfig = {
+// Session configuration with file store
+const FileStore = require('session-file-store')(session);
+
+// Create sessions directory
+const sessionsDir = path.join(__dirname, 'sessions');
+fs.ensureDirSync(sessionsDir);
+
+const sessionConfig = {
     secret: process.env.SESSION_SECRET || 'file-manager-secret-key',
     resave: false,
     saveUninitialized: false,
+    store: new FileStore({
+        path: sessionsDir,
+        ttl: 24 * 60 * 60, // 24 hours in seconds
+        retries: 3,
+        factor: 2,
+        minTimeout: 1000,
+        maxTimeout: 60000,
+        reapInterval: 60 * 60, // Clean up expired sessions every hour (in seconds)
+        logFn: () => {} // Disable logging
+    }),
     cookie: {
         secure: false, // Set to true if using HTTPS
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 };
 
-// Initialize Redis store asynchronously
-async function initializeRedisStore() {
-    if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
-        try {
-            const redis = require('redis');
-            const RedisStore = require('connect-redis').default;
-            
-            console.log('Attempting to connect to Redis at:', process.env.REDIS_URL || 'redis://127.0.0.1:6379');
-            
-            const redisClient = redis.createClient({
-                url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
-                socket: {
-                    reconnectStrategy: (retries) => {
-                        if (retries > 5) {
-                            console.error('Redis reconnection failed after 5 attempts');
-                            return false;
-                        }
-                        return Math.min(retries * 50, 500);
-                    }
-                }
-            });
-            
-            // Handle Redis connection events
-            redisClient.on('connect', () => {
-                console.log('Redis client connected');
-            });
-            
-            redisClient.on('ready', () => {
-                console.log('Redis client ready');
-            });
-            
-            redisClient.on('error', (err) => {
-                console.error('Redis client error:', err.message);
-            });
-            
-            redisClient.on('end', () => {
-                console.log('Redis client connection ended');
-            });
-            
-            // Connect to Redis
-            await redisClient.connect();
-            
-            sessionConfig.store = new RedisStore({
-                client: redisClient,
-                prefix: 'file-manager:'
-            });
-            
-            console.log('Using Redis session store');
-        } catch (error) {
-            console.warn('Redis not available, using memory store (not recommended for production)');
-            console.error('Redis error details:', error.message);
-        }
-    } else {
-        console.log('Using memory session store (development mode)');
-    }
-}
-
-// Initialize Redis and then set up session middleware
-initializeRedisStore().then(() => {
-    app.use(session(sessionConfig));
-}).catch((error) => {
-    console.error('Failed to initialize Redis store:', error.message);
-    app.use(session(sessionConfig));
-});
+console.log('Using file-based session store for production-ready session management');
+app.use(session(sessionConfig));
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({

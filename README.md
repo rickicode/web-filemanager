@@ -128,6 +128,15 @@ When authentication is disabled:
 - All file operations are immediately available
 - Useful for local development or trusted environments
 
+### Session Management
+
+The application uses file-based session storage for production-ready session management:
+- **Session files**: Stored in `/app/sessions` directory inside container
+- **Automatic cleanup**: Expired sessions cleaned up every hour
+- **Persistent sessions**: Sessions survive container restarts
+- **No external dependencies**: No Redis or database required
+- **Production ready**: Scalable and reliable for production use
+
 ## Configuration
 
 ### Environment Variables

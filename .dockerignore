@@ -114,4 +114,4 @@ logs
 
 # Runtime data
 uploads/
-redis-data/
+sessions/
