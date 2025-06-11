@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web File Manager</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -50,11 +51,11 @@
                 <div id="progressFill" class="progress-fill"></div>
             </div>
             <div class="upload-info">
-                <span id="progressText">Uploading...</span>
+                <span id="progressText"><i class="fas fa-upload"></i> Uploading...</span>
                 <div class="upload-stats">
-                    <span id="uploadSpeed">0 MB/s</span>
-                    <span id="uploadSize">0 MB / 0 MB</span>
-                    <span id="uploadETA">ETA: --</span>
+                    <span id="uploadSpeed"><i class="fas fa-tachometer-alt"></i> 0 MB/s</span>
+                    <span id="uploadSize"><i class="fas fa-file-archive"></i> 0 MB / 0 MB</span>
+                    <span id="uploadETA"><i class="fas fa-clock"></i> ETA: --</span>
                 </div>
             </div>
         </div>

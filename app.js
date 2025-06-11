@@ -29,15 +29,44 @@ app.use(express.urlencoded({ extended: true, limit: '50gb' }));
 app.use(express.static('public'));
 
 // Session configuration
-app.use(session({
+let sessionConfig = {
     secret: process.env.SESSION_SECRET || 'file-manager-secret-key',
     resave: false,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
         secure: false, // Set to true if using HTTPS
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
-}));
+};
+
+// Use Redis store in production or if Redis is available
+if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
+    try {
+        const redis = require('redis');
+        const RedisStore = require('connect-redis').default;
+        
+        const redisClient = redis.createClient({
+            url: process.env.REDIS_URL || 'redis://localhost:6379'
+        });
+        
+        redisClient.connect().catch((err) => {
+            console.warn('Redis connection failed, falling back to memory store:', err.message);
+        });
+        
+        sessionConfig.store = new RedisStore({
+            client: redisClient,
+            prefix: 'file-manager:'
+        });
+        
+        console.log('Using Redis session store');
+    } catch (error) {
+        console.warn('Redis not available, using memory store (not recommended for production)');
+    }
+} else {
+    console.log('Using memory session store (development mode)');
+}
+
+app.use(session(sessionConfig));
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({

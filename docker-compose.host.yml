@@ -12,6 +12,7 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - SESSION_SECRET=${SESSION_SECRET:-file-manager-secret-key-change-this}
+      - REDIS_URL=${REDIS_URL}  # Optional: Redis URL for session storage
       - NODE_ENV=production
       - MAX_FILE_SIZE=${MAX_FILE_SIZE:-0}  # 0 = unlimited
       - UPLOAD_TIMEOUT=${UPLOAD_TIMEOUT:-300000}  # 5 minutes

@@ -264,7 +264,7 @@ async function processEntry(entry, files, path = '') {
 async function uploadFiles(files, isFolder = false) {
     // Check if files array is valid and not empty
     if (!files || files.length === 0) {
-        showToast('No files selected for upload', 'error');
+        showToast('<i class="fas fa-exclamation-triangle"></i> No files selected for upload', 'error');
         return;
     }
     
@@ -272,9 +272,9 @@ async function uploadFiles(files, isFolder = false) {
     
     // Show info about multiple files being uploaded
     if (files.length > 1) {
-        showToast(`Preparing to upload ${files.length} files...`, 'info');
+        showToast(`<i class="fas fa-file-upload"></i> Preparing to upload ${files.length} files...`, 'info');
     } else {
-        showToast(`Preparing to upload "${files[0].name}"...`, 'info');
+        showToast(`<i class="fas fa-file-upload"></i> Preparing to upload "${files[0].name}"...`, 'info');
     }
     
     const formData = new FormData();
@@ -311,11 +311,11 @@ async function uploadFiles(files, isFolder = false) {
             
             let message;
             if (isFolder || files.some(f => f.webkitRelativePath)) {
-                message = `Successfully uploaded folder with ${result.files.length} file(s)`;
+                message = `<i class="fas fa-folder-open"></i> Successfully uploaded folder with ${result.files.length} file(s)`;
             } else if (result.files.length > 1) {
-                message = `Successfully uploaded ${result.files.length} files to ${currentPath || 'root folder'}`;
+                message = `<i class="fas fa-check-circle"></i> Successfully uploaded ${result.files.length} files to ${currentPath || 'root folder'}`;
             } else {
-                message = `Successfully uploaded "${result.files[0].name}" to ${currentPath || 'root folder'}`;
+                message = `<i class="fas fa-check"></i> Successfully uploaded "${result.files[0].name}" to ${currentPath || 'root folder'}`;
             }
             showToast(message, 'success');
             loadFiles(currentPath); // Refresh current directory
@@ -387,7 +387,7 @@ function updateUploadStats(progress) {
             document.getElementById('uploadETA').textContent = 'ETA: completing...';
         }
         
-        progressText.textContent = `Uploading... ${Math.round(progress)}%`;
+        progressText.innerHTML = `<i class="fas fa-upload"></i> Uploading... ${Math.round(progress)}%`;
     }
 }
 
@@ -423,7 +423,7 @@ function hideUploadProgress() {
     }
     
     progressFill.style.width = '100%';
-    progressText.textContent = 'Upload complete!';
+    progressText.innerHTML = '<i class="fas fa-check-circle"></i> Upload complete!';
     document.getElementById('uploadSpeed').textContent = '0 MB/s';
     document.getElementById('uploadETA').textContent = 'Complete!';
     
@@ -537,23 +537,24 @@ function createFileItem(item) {
             </div>
         `;
     } else {
+        // List view layout - simplified structure
         return `
             <div class="file-item ${isFolder ? 'folder' : ''}" onclick="${clickHandler}">
                 ${checkbox}
-                ${dropdown}
                 <div class="file-icon ${iconClass}">
                     <i class="fas ${getFileIconClass(item)}"></i>
                 </div>
-                <div class="file-content">
+                <div class="file-info-wrapper">
+                    <div class="file-name">${item.name}</div>
                     <div class="file-details">
-                        <div class="file-name">${item.name}</div>
-                        <div class="file-info">
-                            ${fileSize}${fileSize && modifiedDate ? ' • ' : ''}${modifiedDate}
-                        </div>
+                        <span class="file-size">${fileSize}</span>
+                        ${fileSize && modifiedDate ? ' • ' : ''}
+                        <span class="file-date">${modifiedDate}</span>
                     </div>
-                    <div class="file-actions" onclick="event.stopPropagation()">
-                        ${downloadAction}
-                    </div>
+                </div>
+                <div class="file-actions" onclick="event.stopPropagation()">
+                    ${downloadAction}
+                    ${dropdown}
                 </div>
             </div>
         `;

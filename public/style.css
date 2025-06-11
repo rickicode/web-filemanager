@@ -577,37 +577,85 @@ body {
 .file-list.list-view .file-item {
     display: flex;
     align-items: center;
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1rem;
+    min-height: auto;
+    max-height: auto;
+    aspect-ratio: auto;
+    height: auto;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+    background: #111827;
 }
 
-.file-list.list-view .file-icon {
-    font-size: 1.75rem;
-    margin: 0 1.5rem 0 0;
-    width: 2.5rem;
-    text-align: center;
+.file-list.list-view .file-item:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: #374151;
+    transform: none;
+    box-shadow: none;
 }
 
-.file-list.list-view .file-content {
-    flex: 1;
+.file-list.list-view .file-item.selected {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: #6366f1;
+    box-shadow: none;
+}
+
+.file-list.list-view .file-item.folder:hover {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: #374151;
+    box-shadow: none;
+}
+
+.file-list.list-view .file-checkbox {
+    margin-right: 0.75rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
 }
 
-.file-list.list-view .file-details {
+.file-list.list-view .file-icon {
+    font-size: 1.25rem;
+    margin-right: 0.75rem;
+    width: 1.5rem;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.file-list.list-view .file-info-wrapper {
     flex: 1;
+    min-width: 0;
 }
 
 .file-list.list-view .file-name {
+    font-weight: 500;
+    color: #f9fafb;
     margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.file-list.list-view .file-info {
-    margin-bottom: 0;
+.file-list.list-view .file-details {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    white-space: nowrap;
 }
 
 .file-list.list-view .file-actions {
-    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-left: 1rem;
+}
+
+.file-list.list-view .file-item:hover .file-actions {
+    opacity: 1;
+}
+
+.file-list.list-view .file-dropdown-top {
+    margin: 0;
 }
 
 /* Buttons */
@@ -1035,14 +1083,38 @@ body {
         flex-direction: column;
     }
 
-    .file-list.list-view .file-content {
-        flex-direction: column;
-        align-items: flex-start;
+    .file-list.list-view .file-item {
+        grid-template-columns: 40px 30px 1fr 80px;
         gap: 0.5rem;
     }
-
+    
+    .file-list-header {
+        grid-template-columns: 40px 30px 1fr 80px;
+        gap: 0.5rem;
+    }
+    
+    .file-list.list-view .file-size-column,
+    .file-list.list-view .file-date-column {
+        display: none;
+    }
+    
+    .file-list.list-view .file-item {
+        padding: 0.5rem;
+    }
+    
+    .file-list.list-view .file-icon {
+        margin-right: 0.5rem;
+        width: 1.25rem;
+        font-size: 1.1rem;
+    }
+    
+    .file-list.list-view .file-checkbox {
+        margin-right: 0.5rem;
+    }
+    
     .file-list.list-view .file-actions {
-        align-self: flex-end;
+        opacity: 1;
+        margin-left: 0.5rem;
     }
 
     .login-container {
