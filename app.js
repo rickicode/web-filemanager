@@ -469,9 +469,9 @@ app.post('/api/save-editor-file', requireAuth, (req, res) => {
             return res.status(400).json({ error: 'Invalid filename: cannot contain path separators or parent directory references' });
         }
         
-        // Create Editor directory if it doesn't exist
-        const editorDir = path.join(UPLOADS_DIR, 'Editor');
-        fs.ensureDirSync(editorDir);
+        // Create Saved directory if it doesn't exist for manual saves
+        const savedDir = path.join(UPLOADS_DIR, 'Saved');
+        fs.ensureDirSync(savedDir);
         
         // Create filename with room info if not default room
         let finalFilename = cleanFilename;
@@ -481,7 +481,7 @@ app.post('/api/save-editor-file', requireAuth, (req, res) => {
             finalFilename = `${nameWithoutExt}_room-${roomId}${ext}`;
         }
         
-        const fullPath = path.join(editorDir, finalFilename);
+        const fullPath = path.join(savedDir, finalFilename);
         
         // Check if file already exists and add number suffix if needed
         let counter = 1;
@@ -492,7 +492,7 @@ app.post('/api/save-editor-file', requireAuth, (req, res) => {
             const ext = path.extname(finalFilename);
             const nameWithoutExt = path.basename(finalFilename, ext);
             actualFilename = `${nameWithoutExt}_${counter}${ext}`;
-            actualFullPath = path.join(editorDir, actualFilename);
+            actualFullPath = path.join(savedDir, actualFilename);
             counter++;
         }
         
@@ -657,6 +657,60 @@ app.post('/api/download-zip', requireAuth, (req, res) => {
 // Realtime editor storage - support multiple rooms
 const editorRooms = new Map(); // roomId -> { content: '', users: Set() }
 
+// Ensure Editor directory exists
+const EDITOR_DIR = path.join(UPLOADS_DIR, 'Editor');
+fs.ensureDirSync(EDITOR_DIR);
+
+// Function to auto-save editor content to file
+function autoSaveEditorContent(roomId, content) {
+    try {
+        // Determine filename based on room
+        let filename;
+        if (!roomId || roomId === 'default') {
+            filename = 'default.txt';
+        } else {
+            filename = `${roomId}.txt`;
+        }
+        
+        const filePath = path.join(EDITOR_DIR, filename);
+        
+        // Save content to file
+        fs.writeFileSync(filePath, content, 'utf8');
+        console.log(`Auto-saved editor content to: ${filePath}`);
+        
+    } catch (error) {
+        console.error('Auto-save error:', error);
+    }
+}
+
+// Function to load editor content from file
+function loadEditorContent(roomId) {
+    try {
+        // Determine filename based on room
+        let filename;
+        if (!roomId || roomId === 'default') {
+            filename = 'default.txt';
+        } else {
+            filename = `${roomId}.txt`;
+        }
+        
+        const filePath = path.join(EDITOR_DIR, filename);
+        
+        // Load content from file if exists
+        if (fs.existsSync(filePath)) {
+            const content = fs.readFileSync(filePath, 'utf8');
+            console.log(`Loaded editor content from: ${filePath}`);
+            return content;
+        }
+        
+        return ''; // Return empty string if file doesn't exist
+        
+    } catch (error) {
+        console.error('Load content error:', error);
+        return '';
+    }
+}
+
 // WebSocket handling with room support
 io.on('connection', (socket) => {
     let currentRoom = null;
@@ -674,8 +728,10 @@ io.on('connection', (socket) => {
         
         // Initialize room if doesn't exist
         if (!editorRooms.has(roomId)) {
+            // Load existing content from file
+            const savedContent = loadEditorContent(roomId);
             editorRooms.set(roomId, {
-                content: '',
+                content: savedContent,
                 users: new Set()
             });
         }
@@ -701,6 +757,10 @@ io.on('connection', (socket) => {
         if (currentRoom && editorRooms.has(currentRoom)) {
             const room = editorRooms.get(currentRoom);
             room.content = data.content;
+            
+            // Auto-save content to file
+            autoSaveEditorContent(currentRoom, data.content);
+            
             // Broadcast to all other users in the same room
             socket.to(currentRoom).emit('textUpdate', { content: room.content });
         }

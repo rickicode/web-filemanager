@@ -293,6 +293,9 @@
                     <span class="user-count" id="userCount">1</span>
                     <span>online</span>
                 </div>
+                <button id="copyAllBtn" class="btn btn-warning">
+                    <i class="fas fa-copy"></i> Copy All
+                </button>
                 <button id="saveToFileBtn" class="btn btn-success">
                     <i class="fas fa-save"></i> Save to File
                 </button>
@@ -350,6 +353,7 @@
         const roomInfo = document.getElementById('roomInfo');
         const newRoomBtn = document.getElementById('newRoomBtn');
         const saveToFileBtn = document.getElementById('saveToFileBtn');
+        const copyAllBtn = document.getElementById('copyAllBtn');
 
         // Get room from URL path
         function getRoomFromURL() {
@@ -525,12 +529,54 @@
             }
         }
 
+        // Copy all content to clipboard
+        async function copyAllContent() {
+            const content = editorTextarea.value;
+            
+            if (!content.trim()) {
+                showToast('No content to copy', 'warning');
+                return;
+            }
+            
+            try {
+                // Use the modern Clipboard API if available
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(content);
+                    showToast('All content copied to clipboard!', 'success');
+                } else {
+                    // Fallback for older browsers or non-secure contexts
+                    editorTextarea.select();
+                    editorTextarea.setSelectionRange(0, 99999); // For mobile devices
+                    
+                    try {
+                        const successful = document.execCommand('copy');
+                        if (successful) {
+                            showToast('All content copied to clipboard!', 'success');
+                        } else {
+                            throw new Error('Copy command failed');
+                        }
+                    } catch (err) {
+                        throw new Error('Unable to copy content');
+                    }
+                    
+                    // Remove selection
+                    editorTextarea.setSelectionRange(0, 0);
+                }
+            } catch (error) {
+                console.error('Copy error:', error);
+                showToast('Failed to copy content: ' + error.message, 'error');
+            }
+        }
+
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
             initSocket();
             
             // Add event listener for text changes
             editorTextarea.addEventListener('input', handleTextChange);
+            
+            // Add event listener for copy all button
+            copyAllBtn.addEventListener('click', copyAllContent);
             
             // Add event listener for save to file button
             saveToFileBtn.addEventListener('click', saveToFile);
