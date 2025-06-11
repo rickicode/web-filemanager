@@ -210,6 +210,23 @@ app.get('/editor/:roomId', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'editor.html'));
 });
 
+// Permalink routes for shorter URLs
+// Realtime Editor page - default room (short URL)
+app.get('/e', (req, res) => {
+    if (AUTH_ENABLED && !req.session.authenticated) {
+        return res.redirect('/login');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'editor.html'));
+});
+
+// Realtime Editor page - specific room (short URL with numbers)
+app.get('/e/:roomId', (req, res) => {
+    if (AUTH_ENABLED && !req.session.authenticated) {
+        return res.redirect('/login');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'editor.html'));
+});
+
 // Get files and folders
 app.get('/api/files', requireAuth, (req, res) => {
     try {

@@ -358,8 +358,8 @@
         // Get room from URL path
         function getRoomFromURL() {
             const pathParts = window.location.pathname.split('/');
-            // URL structure: /editor or /editor/roomId
-            if (pathParts.length >= 3 && pathParts[1] === 'editor') {
+            // URL structure: /editor or /editor/roomId OR /e or /e/roomId
+            if (pathParts.length >= 3 && (pathParts[1] === 'editor' || pathParts[1] === 'e')) {
                 const roomId = pathParts[2];
                 // Validate that roomId is a valid room identifier (numbers only)
                 if (roomId && /^[0-9]+$/.test(roomId)) {
