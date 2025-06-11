@@ -44,11 +44,14 @@ redis-server --port 6379 --bind 127.0.0.1 --dir /app/redis-data --appendonly yes
 
 # Wait for Redis to be ready
 echo "Waiting for Redis to be ready..."
-until redis-cli ping; do
+until redis-cli ping > /dev/null 2>&1; do
   echo "Redis is unavailable - sleeping"
   sleep 1
 done
 echo "Redis is ready!"
+
+# Give Redis a moment to fully initialize
+sleep 2
 
 # Start the Node.js application
 echo "Starting File Manager..."

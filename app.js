@@ -44,7 +44,7 @@ async function initializeRedisStore() {
     if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
         try {
             const redis = require('redis');
-            const RedisStore = require('connect-redis')(session);
+            const RedisStore = require('connect-redis').default;
             
             console.log('Attempting to connect to Redis at:', process.env.REDIS_URL || 'redis://127.0.0.1:6379');
             
