@@ -39,34 +39,70 @@ let sessionConfig = {
     }
 };
 
-// Use Redis store in production or if Redis is available
-if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
-    try {
-        const redis = require('redis');
-        const RedisStore = require('connect-redis').default;
-        
-        const redisClient = redis.createClient({
-            url: process.env.REDIS_URL || 'redis://localhost:6379'
-        });
-        
-        redisClient.connect().catch((err) => {
-            console.warn('Redis connection failed, falling back to memory store:', err.message);
-        });
-        
-        sessionConfig.store = new RedisStore({
-            client: redisClient,
-            prefix: 'file-manager:'
-        });
-        
-        console.log('Using Redis session store');
-    } catch (error) {
-        console.warn('Redis not available, using memory store (not recommended for production)');
+// Initialize Redis store asynchronously
+async function initializeRedisStore() {
+    if (process.env.NODE_ENV === 'production' || process.env.REDIS_URL) {
+        try {
+            const redis = require('redis');
+            const RedisStore = require('connect-redis').default;
+            
+            console.log('Attempting to connect to Redis at:', process.env.REDIS_URL || 'redis://127.0.0.1:6379');
+            
+            const redisClient = redis.createClient({
+                url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
+                socket: {
+                    reconnectStrategy: (retries) => {
+                        if (retries > 5) {
+                            console.error('Redis reconnection failed after 5 attempts');
+                            return false;
+                        }
+                        return Math.min(retries * 50, 500);
+                    }
+                }
+            });
+            
+            // Handle Redis connection events
+            redisClient.on('connect', () => {
+                console.log('Redis client connected');
+            });
+            
+            redisClient.on('ready', () => {
+                console.log('Redis client ready');
+            });
+            
+            redisClient.on('error', (err) => {
+                console.error('Redis client error:', err.message);
+            });
+            
+            redisClient.on('end', () => {
+                console.log('Redis client connection ended');
+            });
+            
+            // Connect to Redis
+            await redisClient.connect();
+            
+            sessionConfig.store = new RedisStore({
+                client: redisClient,
+                prefix: 'file-manager:'
+            });
+            
+            console.log('Using Redis session store');
+        } catch (error) {
+            console.warn('Redis not available, using memory store (not recommended for production)');
+            console.error('Redis error details:', error.message);
+        }
+    } else {
+        console.log('Using memory session store (development mode)');
     }
-} else {
-    console.log('Using memory session store (development mode)');
 }
 
-app.use(session(sessionConfig));
+// Initialize Redis and then set up session middleware
+initializeRedisStore().then(() => {
+    app.use(session(sessionConfig));
+}).catch((error) => {
+    console.error('Failed to initialize Redis store:', error.message);
+    app.use(session(sessionConfig));
+});
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
