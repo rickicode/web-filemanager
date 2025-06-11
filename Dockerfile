@@ -19,8 +19,8 @@ COPY . .
 # Production stage
 FROM node:20-alpine AS production
 
-# Install dumb-init, git, redis, and supervisor for managing multiple processes
-RUN apk add --no-cache dumb-init git redis supervisor
+# Install dumb-init, git, and redis
+RUN apk add --no-cache dumb-init git redis
 
 # Set working directory
 WORKDIR /app
@@ -36,38 +36,32 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/app.js ./
 COPY --from=builder /app/healthcheck.js ./
 
+# Create startup script
+COPY <<EOF /app/start.sh
+#!/bin/sh
+echo "Starting Redis..."
+redis-server --port 6379 --bind 127.0.0.1 --dir /app/redis-data --appendonly yes --daemonize yes
+
+# Wait for Redis to be ready
+echo "Waiting for Redis to be ready..."
+until redis-cli ping; do
+  echo "Redis is unavailable - sleeping"
+  sleep 1
+done
+echo "Redis is ready!"
+
+# Start the Node.js application
+echo "Starting File Manager..."
+exec node app.js
+EOF
+
+RUN chmod +x /app/start.sh
+
 # Create uploads directory and redis data directory with proper permissions
 RUN mkdir -p uploads redis-data && \
     chmod 755 uploads && \
     chmod 755 public && \
     chmod 755 redis-data
-
-# Create supervisor configuration for managing Redis and Node.js
-RUN mkdir -p /etc/supervisor.d
-COPY <<EOF /etc/supervisor.d/supervisord.conf
-[supervisord]
-nodaemon=true
-user=root
-logfile=/dev/stdout
-logfile_maxbytes=0
-
-[program:redis]
-command=redis-server --port 6379 --bind 127.0.0.1 --dir /app/redis-data --appendonly yes
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-autorestart=true
-
-[program:filemanager]
-command=node app.js
-stdout_logfile=/dev/stdout
-stdout_logfile_maxbytes=0
-stderr_logfile=/dev/stderr
-stderr_logfile_maxbytes=0
-autorestart=true
-environment=REDIS_URL="redis://127.0.0.1:6379"
-EOF
 
 # Set environment variables
 ENV REDIS_URL=redis://127.0.0.1:6379
@@ -83,5 +77,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start supervisor to manage Redis and Node.js application
-CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.conf"]
+# Start using the startup script
+CMD ["/app/start.sh"]
