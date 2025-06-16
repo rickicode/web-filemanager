@@ -202,7 +202,7 @@ app.get('/editor', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'editor.html'));
 });
 
-// Realtime Editor page - specific room (numbers only)
+// Realtime Editor page - specific room
 app.get('/editor/:roomId', (req, res) => {
     if (AUTH_ENABLED && !req.session.authenticated) {
         return res.redirect('/login');
@@ -219,7 +219,7 @@ app.get('/e', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'editor.html'));
 });
 
-// Realtime Editor page - specific room (short URL with numbers)
+// Realtime Editor page - specific room (short URL)
 app.get('/e/:roomId', (req, res) => {
     if (AUTH_ENABLED && !req.session.authenticated) {
         return res.redirect('/login');

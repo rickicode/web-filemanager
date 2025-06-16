@@ -361,8 +361,8 @@
             // URL structure: /editor or /editor/roomId OR /e or /e/roomId
             if (pathParts.length >= 3 && (pathParts[1] === 'editor' || pathParts[1] === 'e')) {
                 const roomId = pathParts[2];
-                // Validate that roomId is a valid room identifier (numbers only)
-                if (roomId && /^[0-9]+$/.test(roomId)) {
+                // Validate that roomId is a valid room identifier (alphanumeric and hyphens)
+                if (roomId && /^[a-zA-Z0-9-]+$/.test(roomId)) {
                     return roomId;
                 }
             }
@@ -472,15 +472,15 @@
             }
         }
 
-        // Create new room with 3-digit number
+        // Create new room with a random alphanumeric ID
         function createNewRoom() {
-            // Generate random 3-digit number (100-999)
-            const roomNumber = Math.floor(Math.random() * 900) + 100;
+            // Generate a random alphanumeric ID (e.g., 8 characters)
+            const newRoomId = Math.random().toString(36).substring(2, 10);
             
             // Create room URL with clean path structure
-            const newUrl = `/editor/${roomNumber}`;
+            const newUrl = `/editor/${newRoomId}`;
             window.open(newUrl, '_blank');
-            showToast(`New room created: ${roomNumber}`, 'success');
+            showToast(`New room created: ${newRoomId}`, 'success');
         }
 
         // Save content to file
